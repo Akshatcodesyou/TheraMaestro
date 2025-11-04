@@ -1,0 +1,380 @@
+{
+  "name": "TheraMaestro - Complete Therapy AI Agent (FIXED)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "therapy-session",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "f3db58c3-b329-4e3c-b8a5-ead49f00386e",
+      "name": "Therapy Session Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        -80
+      ],
+      "webhookId": "therapy-session-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate incoming therapy session data\n// Access webhook body data correctly\nconst inputData = $input.first().json.body || $input.first().json || {};\n\nconsole.log('Received webhook data:', JSON.stringify(inputData, null, 2));\n\nconst requiredFields = ['exercise_type', 'performance_metrics', 'patient_message'];\nconst missingFields = requiredFields.filter(field => !inputData[field]);\n\nif (missingFields.length > 0) {\n  console.log('Missing fields detected:', missingFields);\n  console.log('Available fields:', Object.keys(inputData));\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}. Available: ${Object.keys(inputData).join(', ')}`);\n}\n\n// Parse performance metrics\nconst metrics = {};\nif (inputData.performance_metrics) {\n  const metricPairs = inputData.performance_metrics.split(',');\n  metricPairs.forEach(pair => {\n    const [key, value] = pair.split('=');\n    if (key && value) {\n      metrics[key.trim()] = value.trim();\n    }\n  });\n}\n\nreturn [{\n  json: {\n    ...inputData,\n    parsed_metrics: metrics,\n    timestamp: new Date().toISOString(),\n    session_id: 'session_' + Date.now()\n  }\n}];"
+      },
+      "id": "b1570639-e5f7-4b69-b114-4b9b5f083d0b",
+      "name": "Input Validator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "={{ parseInt($json.parsed_metrics.pain_level) }}",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "e6449b92-f122-424a-a836-8e2288e5c4a2",
+              "leftValue": "={{ parseInt($json.parsed_metrics.pain_level) }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "name": "filter.operator.gt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "bc6afbbe-2355-4661-a70d-b7f5eec6e462",
+      "name": "Pain Safety Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1392,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Emergency override for high pain\nreturn [{\n  json: {\n    emergency: true,\n    action: 'STOP_IMMEDIATELY',\n    message: 'High pain level detected. Immediate rest recommended.',\n    music_override: {\n      tempo: 60,\n      genre: 'calming',\n      energy: 2,\n      instruments: 'piano,strings',\n      theme: 'Soothing relaxation music for pain management',\n      color: 'blue',\n      icon: '🩺'\n    },\n    exercise_plan: {\n      next_exercise: 'rest_and_recovery',\n      difficulty_adjustment: -2,\n      rest_period: 300,\n      encouragement_message: 'Your safety is our priority. Let\\'s take a break with some calming music.'\n    },\n    session_id: $json.session_id,\n    timestamp: $json.timestamp\n  }\n}];"
+      },
+      "id": "a66bf5ca-6765-4964-b572-d5a7caeba940",
+      "name": "Emergency Override",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:11434",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "53fd522e-66a7-45ae-a839-eacb24de163f",
+      "name": "Exercise Analyzer (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:11434",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "054f8e0a-cf66-4ff6-9758-bbe21c992024",
+      "name": "Mood Detector (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse Ollama responses and aggregate data\nconst inputs = $input.all();\n\n// Find exercise and mood responses\nconst exerciseResponse = inputs.find(item => item.sourceIndex === 0)?.json;\nconst moodResponse = inputs.find(item => item.sourceIndex === 1)?.json;\n\nconsole.log('Exercise Response:', JSON.stringify(exerciseResponse, null, 2));\nconsole.log('Mood Response:', JSON.stringify(moodResponse, null, 2));\n\n// Extract exercise plan from AI response\nlet exercisePlan;\ntry {\n  // Try to parse JSON from response\n  const responseText = exerciseResponse?.response || '';\n  const jsonMatch = responseText.match(/\\{[^}]*\\}/);\n  if (jsonMatch) {\n    exercisePlan = JSON.parse(jsonMatch[0]);\n  } else {\n    // Fallback plan\n    exercisePlan = {\n      difficulty_adjustment: 0,\n      next_exercise: 'continued_shoulder_rotation',\n      rest_period: 60,\n      encouragement_message: 'Good work! Let\\'s continue with your current exercise.',\n      confidence_score: 0.7\n    };\n  }\n} catch (e) {\n  console.log('Exercise plan parsing error:', e);\n  exercisePlan = {\n    difficulty_adjustment: 0,\n    next_exercise: 'basic_stretching',\n    rest_period: 90,\n    encouragement_message: 'Let\\'s take it steady with some gentle stretching.',\n    confidence_score: 0.6\n  };\n}\n\n// Extract mood\nconst mood = moodResponse?.response?.trim().toLowerCase() || 'neutral';\n\n// Determine progress trend\nconst progressTrend = exercisePlan.difficulty_adjustment > 0 ? 'improving' : \n                     exercisePlan.difficulty_adjustment < 0 ? 'regressing' : 'plateau';\n\n// Map exercise to intensity\nconst intensityMap = {\n  'rest_and_recovery': 'low',\n  'stretching': 'low',\n  'basic_stretching': 'low',\n  'shoulder_rotation': 'medium',\n  'continued_shoulder_rotation': 'medium',\n  'resistance_band': 'high',\n  'weight_training': 'high'\n};\n\nreturn [{\n  json: {\n    session_id: $json.session_id,\n    timestamp: $json.timestamp,\n    exercise_plan: exercisePlan,\n    patient_mood: mood,\n    progress_trend: progressTrend,\n    exercise_intensity: intensityMap[exercisePlan.next_exercise] || 'medium',\n    music_inputs: {\n      mood: mood,\n      intensity: intensityMap[exercisePlan.next_exercise] || 'medium',\n      progress: progressTrend\n    }\n  }\n}];"
+      },
+      "id": "80c5aa91-c551-4ec8-bfff-337f7e0a3bd9",
+      "name": "Data Aggregator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:11434",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "id": "dfd409e4-596c-4a3d-aebc-54fe9a50b5b6",
+      "name": "Music Composer (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -848,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse music description and create final output\nconst musicResponse = $input.first().json;\nconst aggregatedData = $('Data Aggregator').item?.json || $json;\nconst originalData = $input.all()[1]?.json || {};\n\nconsole.log('Music Response:', JSON.stringify(musicResponse, null, 2));\n\nconst musicDesc = musicResponse?.response || 'TEMPO=80, GENRE=calming, ENERGY=5, INSTRUMENTS=piano, THEME=Soothing therapy music';\n\n// Parse music parameters\nconst tempoMatch = musicDesc.match(/TEMPO=(\\d+)/);\nconst genreMatch = musicDesc.match(/GENRE=(\\w+)/);\nconst energyMatch = musicDesc.match(/ENERGY=(\\d+)/);\nconst instrumentsMatch = musicDesc.match(/INSTRUMENTS=([^,]+)/);\nconst themeMatch = musicDesc.match(/THEME=([^,]+)/);\n\n// Map to UI properties\nconst genreConfigs = {\n  'calming': { color: '#4A90E2', icon: '🎵', description: 'Soothing therapeutic music' },\n  'upbeat': { color: '#50C878', icon: '🎸', description: 'Energetic motivational music' },\n  'inspirational': { color: '#FFD700', icon: '🎻', description: 'Uplifting achievement music' },\n  'ambient': { color: '#9B59B6', icon: '🎹', description: 'Calming ambient soundscape' },\n  'classical': { color: '#E74C3C', icon: '🎼', description: 'Classical therapy music' }\n};\n\nconst genre = genreMatch ? genreMatch[1] : 'calming';\nconst config = genreConfigs[genre] || genreConfigs.calming;\n\nconst musicOutput = {\n  tempo: tempoMatch ? parseInt(tempoMatch[1]) : 80,\n  genre: genre,\n  energy: energyMatch ? parseInt(energyMatch[1]) : 5,\n  instruments: instrumentsMatch ? instrumentsMatch[1] : 'piano',\n  theme: themeMatch ? themeMatch[1] : config.description,\n  color: config.color,\n  icon: config.icon,\n  audio_url: `https://therapy-music.example.com/${genre}_${tempoMatch ? tempoMatch[1] : 80}bpm.mp3`,\n  duration: 180\n};\n\n// Create final therapy session output\nreturn [{\n  json: {\n    session_id: aggregatedData.session_id,\n    timestamp: aggregatedData.timestamp,\n    \n    // Therapy Domain\n    therapy_session: {\n      current_exercise: aggregatedData.exercise_plan.next_exercise,\n      difficulty_level: aggregatedData.exercise_plan.difficulty_adjustment,\n      rest_period: aggregatedData.exercise_plan.rest_period,\n      therapist_feedback: aggregatedData.exercise_plan.encouragement_message,\n      confidence: aggregatedData.exercise_plan.confidence_score || 0.7\n    },\n    \n    // Adaptive Learning\n    adaptive_learning: {\n      progress_trend: aggregatedData.progress_trend,\n      mood_assessment: aggregatedData.patient_mood,\n      performance_metrics: originalData.parsed_metrics || {},\n      adaptation_reason: `Difficulty ${aggregatedData.exercise_plan.difficulty_adjustment > 0 ? 'increased' : 'decreased'} based on performance`\n    },\n    \n    // Theme Song Mode (Wildcard)\n    theme_song: musicOutput,\n    \n    // Session Summary\n    session_summary: {\n      status: 'completed',\n      duration_estimate: '3 minutes',\n      next_steps: `Continue with ${aggregatedData.exercise_plan.next_exercise} while listening to ${musicOutput.theme}`,\n      achievement_unlocked: aggregatedData.exercise_plan.difficulty_adjustment > 0 ? 'Progress Milestone' : 'Consistency Award'\n    }\n  }\n}];"
+      },
+      "id": "bf9bd53d-b611-441f-9783-3dd509c44725",
+      "name": "Final Output Generator",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Merge emergency override with normal flow\nconst inputData = $input.all();\n\nconsole.log('Output Merger - Input data:', inputData.map(item => ({\n  hasEmergency: !!item.json.emergency,\n  hasSessionId: !!item.json.session_id,\n  source: item.sourceIndex\n})));\n\n// Check if we have emergency override data\nconst emergencyData = inputData.find(item => item.json.emergency);\nconst normalData = inputData.find(item => item.json.session_id && !item.json.emergency);\n\nif (emergencyData) {\n  console.log('Using emergency override data');\n  return [emergencyData];\n} else if (normalData) {\n  console.log('Using normal therapy session data');\n  return [normalData];\n} else {\n  // Fallback\n  console.log('Using fallback data');\n  return [{ json: $json }];\n}"
+      },
+      "id": "0259ac08-402b-4088-856c-64d1a5fe7fe3",
+      "name": "Output Merger",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5735ba78-dc47-4ba8-9407-fddde903685d",
+      "name": "Therapy Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Log session for analytics and continuous learning\nconst sessionData = $json;\n\nconsole.log('Therapy Session Completed:', {\n  session_id: sessionData.session_id,\n  mood: sessionData.adaptive_learning?.mood_assessment,\n  difficulty_change: sessionData.therapy_session?.difficulty_level,\n  music_genre: sessionData.theme_song?.genre,\n  timestamp: sessionData.timestamp\n});\n\n// Store in simple JSON file for session history\n// In production, this would go to a database\n\nreturn [{ json: sessionData }];"
+      },
+      "id": "2ac7ccff-7596-4762-a054-56f44704b387",
+      "name": "Session Logger",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        320
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Therapy Session Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input Validator": {
+      "main": [
+        [
+          {
+            "node": "Pain Safety Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pain Safety Check": {
+      "main": [
+        [
+          {
+            "node": "Exercise Analyzer (Ollama)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Mood Detector (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Emergency Override",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emergency Override": {
+      "main": [
+        [
+          {
+            "node": "Output Merger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exercise Analyzer (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Data Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mood Detector (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Data Aggregator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Aggregator": {
+      "main": [
+        [
+          {
+            "node": "Music Composer (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Music Composer (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Final Output Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Output Generator": {
+      "main": [
+        [
+          {
+            "node": "Output Merger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Merger": {
+      "main": [
+        [
+          {
+            "node": "Therapy Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Logger": {
+      "main": [
+        [
+          {
+            "node": "Therapy Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "29531c5d-c940-425c-bd04-523266a80f52",
+  "meta": {
+    "instanceId": "9b338a56612c34711caa6f61af3898c5b5d6967e026a140d3ba4162cb6556d1a"
+  },
+  "id": "Kpnnt25JnL2akIQI",
+  "tags": []
+}

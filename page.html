@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TheraMaestro - AI Therapy Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: #0a0a0a;
+        min-height: 100vh;
+        color: #e5e5e5;
+      }
+
+      .music-visualizer {
+        background: linear-gradient(
+          45deg,
+          rgba(139, 69, 255, 0.1) 0%,
+          rgba(99, 102, 241, 0.05) 50%,
+          rgba(139, 69, 255, 0.1) 100%
+        );
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(139, 69, 255, 0.3);
+      }
+
+      .therapy-card {
+        background: rgba(24, 24, 27, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(63, 63, 70, 0.5);
+      }
+
+      .pulse-animation {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .progress-ring {
+        transition: stroke-dashoffset 0.5s ease;
+      }
+
+      /* Dark theme input styles */
+      input[type="range"] {
+        background: #27272a;
+        border-radius: 8px;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        background: #8b45ff;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        background: #8b45ff;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+
+      select,
+      textarea,
+      input {
+        background: #18181b !important;
+        border: 1px solid #3f3f46 !important;
+        color: #e5e5e5 !important;
+      }
+
+      select:focus,
+      textarea:focus,
+      input:focus {
+        border-color: #8b45ff !important;
+        box-shadow: 0 0 0 2px rgba(139, 69, 255, 0.2) !important;
+      }
+
+      .dark-gradient-1 {
+        background: linear-gradient(
+          135deg,
+          rgba(139, 69, 255, 0.1) 0%,
+          rgba(99, 102, 241, 0.1) 100%
+        );
+        border: 1px solid rgba(139, 69, 255, 0.2);
+      }
+
+      .dark-gradient-2 {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.1) 0%,
+          rgba(5, 150, 105, 0.1) 100%
+        );
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+
+      .dark-gradient-3 {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1) 0%,
+          rgba(217, 119, 6, 0.1) 100%
+        );
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+
+      .dark-gradient-4 {
+        background: linear-gradient(
+          135deg,
+          rgba(236, 72, 153, 0.1) 0%,
+          rgba(219, 39, 119, 0.1) 100%
+        );
+        border: 1px solid rgba(236, 72, 153, 0.2);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen py-8">
+    <div class="max-w-6xl mx-auto px-4">
+      <!-- Header -->
+      <div class="text-center mb-12 fade-in">
+        <h1 class="text-5xl font-bold text-white mb-4">🎵 TheraMaestro</h1>
+        <p class="text-xl text-gray-300 mb-2">
+          AI-Powered Physical Therapy with Adaptive Music
+        </p>
+        <p class="text-gray-400">Rehab • Adaptive Learning • Theme Song Mode</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Input & Controls -->
+        <div class="lg:col-span-1 space-y-6">
+          <!-- Session Input Card -->
+          <div class="therapy-card rounded-2xl p-6 shadow-2xl">
+            <h2 class="text-2xl font-bold text-gray-100 mb-6 flex items-center">
+              <i class="fas fa-dumbbell mr-3 text-purple-400"></i>
+              Therapy Session
+            </h2>
+
+            <!-- Exercise Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-300 mb-2">
+                Exercise Type
+              </label>
+              <select
+                id="exerciseType"
+                class="w-full px-4 py-3 rounded-xl border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="shoulder_rotation">Shoulder Rotation</option>
+                <option value="resistance_band">Resistance Band</option>
+                <option value="stretching">Stretching</option>
+                <option value="weight_training">Weight Training</option>
+                <option value="mobility_drills">Mobility Drills</option>
+              </select>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="space-y-4 mb-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                  Range of Motion: <span id="rangeValue">75%</span>
+                </label>
+                <input
+                  type="range"
+                  id="rangeMotion"
+                  min="0"
+                  max="100"
+                  value="75"
+                  class="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                  Pain Level: <span id="painValue">3</span>/10
+                </label>
+                <input
+                  type="range"
+                  id="painLevel"
+                  min="1"
+                  max="10"
+                  value="3"
+                  class="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">
+                  Completion Rate: <span id="completionValue">85%</span>
+                </label>
+                <input
+                  type="range"
+                  id="completionRate"
+                  min="0"
+                  max="100"
+                  value="85"
+                  class="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
+            </div>
+
+            <!-- Patient Message -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-300 mb-2">
+                How are you feeling?
+              </label>
+              <textarea
+                id="patientMessage"
+                rows="3"
+                class="w-full px-4 py-3 rounded-xl border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                placeholder="Describe how you're feeling today..."
+              >
+I'm feeling motivated and making good progress!</textarea
+              >
+            </div>
+
+            <!-- Quick Mood Buttons -->
+            <div class="grid grid-cols-3 gap-2 mb-6">
+              <button
+                onclick="setMood('frustrated')"
+                class="p-3 rounded-xl bg-red-900/30 text-red-300 hover:bg-red-900/50 transition-colors border border-red-700/50"
+              >
+                😤 Struggling
+              </button>
+              <button
+                onclick="setMood('motivated')"
+                class="p-3 rounded-xl bg-green-900/30 text-green-300 hover:bg-green-900/50 transition-colors border border-green-700/50"
+              >
+                💪 Motivated
+              </button>
+              <button
+                onclick="setMood('tired')"
+                class="p-3 rounded-xl bg-blue-900/30 text-blue-300 hover:bg-blue-900/50 transition-colors border border-blue-700/50"
+              >
+                😴 Tired
+              </button>
+            </div>
+
+            <!-- Start Session Button -->
+            <button
+              id="startSession"
+              onclick="startTherapySession()"
+              class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-300 pulse-animation"
+            >
+              <i class="fas fa-play mr-2"></i>
+              Start Therapy Session
+            </button>
+          </div>
+
+          <!-- Session History -->
+          <div class="therapy-card rounded-2xl p-6 shadow-2xl">
+            <h3 class="text-lg font-semibold text-gray-100 mb-4">
+              <i class="fas fa-history mr-2 text-purple-400"></i>
+              Recent Sessions
+            </h3>
+            <div id="sessionHistory" class="space-y-3">
+              <div class="text-center text-gray-400 py-4">
+                No sessions yet. Start your first therapy session!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Results & Music -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Music Player Card -->
+          <div class="therapy-card rounded-2xl p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-2xl font-bold text-gray-100 flex items-center">
+                <i class="fas fa-music mr-3 text-purple-400"></i>
+                Theme Song Mode
+              </h2>
+              <div
+                id="musicStatus"
+                class="px-4 py-2 rounded-full bg-yellow-900/30 text-yellow-300 text-sm font-medium border border-yellow-700/50"
+              >
+                Ready for Session
+              </div>
+            </div>
+
+            <!-- Music Visualizer -->
+            <div
+              id="musicVisualizer"
+              class="music-visualizer rounded-2xl p-8 mb-6 text-center"
+            >
+              <div id="musicIcon" class="text-6xl mb-4">🎵</div>
+              <div
+                id="musicTheme"
+                class="text-2xl font-semibold text-white mb-2"
+              >
+                Therapeutic Music
+              </div>
+              <div id="musicDescription" class="text-white/80 mb-4">
+                Waiting for session start...
+              </div>
+
+              <!-- Music Controls -->
+              <div class="flex justify-center space-x-4 mb-6">
+                <button
+                  id="playPauseBtn"
+                  onclick="toggleMusic()"
+                  class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <i class="fas fa-play text-white text-2xl"></i>
+                </button>
+                <button
+                  onclick="adjustTempo('slower')"
+                  class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <i class="fas fa-backward text-white"></i>
+                </button>
+                <button
+                  onclick="adjustTempo('faster')"
+                  class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <i class="fas fa-forward text-white"></i>
+                </button>
+              </div>
+
+              <!-- Music Info -->
+              <div class="grid grid-cols-3 gap-4 text-white">
+                <div>
+                  <div class="text-sm opacity-80">Tempo</div>
+                  <div id="musicTempo" class="text-xl font-bold">- BPM</div>
+                </div>
+                <div>
+                  <div class="text-sm opacity-80">Energy</div>
+                  <div id="musicEnergy" class="text-xl font-bold">- /10</div>
+                </div>
+                <div>
+                  <div class="text-sm opacity-80">Duration</div>
+                  <div id="musicDuration" class="text-xl font-bold">3:00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Therapy Results -->
+          <div
+            id="resultsSection"
+            class="therapy-card rounded-2xl p-6 shadow-2xl hidden"
+          >
+            <h2 class="text-2xl font-bold text-gray-100 mb-6 flex items-center">
+              <i class="fas fa-chart-line mr-3 text-purple-400"></i>
+              Session Results
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <!-- Exercise Plan -->
+              <div class="dark-gradient-1 rounded-2xl p-6">
+                <h3
+                  class="text-lg font-semibold text-gray-100 mb-4 flex items-center"
+                >
+                  <i class="fas fa-running mr-2 text-purple-400"></i>
+                  Exercise Plan
+                </h3>
+                <div id="exercisePlan" class="space-y-3">
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Next Exercise:</span>
+                    <span id="nextExercise" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Difficulty Change:</span>
+                    <span id="difficultyChange" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Rest Period:</span>
+                    <span id="restPeriod" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Adaptive Learning -->
+              <div class="dark-gradient-2 rounded-2xl p-6">
+                <h3
+                  class="text-lg font-semibold text-gray-100 mb-4 flex items-center"
+                >
+                  <i class="fas fa-brain mr-2 text-green-400"></i>
+                  Adaptive Learning
+                </h3>
+                <div id="adaptiveLearning" class="space-y-3">
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Progress Trend:</span>
+                    <span id="progressTrend" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Mood Assessment:</span>
+                    <span id="moodAssessment" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-300">Adaptation:</span>
+                    <span id="adaptationReason" class="font-semibold text-white"
+                      >-</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Therapist Feedback -->
+            <div class="dark-gradient-3 rounded-2xl p-6 mb-6">
+              <h3
+                class="text-lg font-semibold text-gray-100 mb-3 flex items-center"
+              >
+                <i class="fas fa-comment-medical mr-2 text-yellow-400"></i>
+                Therapist Feedback
+              </h3>
+              <p id="therapistFeedback" class="text-gray-300 italic">-</p>
+            </div>
+
+            <!-- Achievement -->
+            <div
+              id="achievementSection"
+              class="dark-gradient-4 rounded-2xl p-6 text-center hidden"
+            >
+              <div id="achievementIcon" class="text-4xl mb-3">🏆</div>
+              <h3 class="text-xl font-bold text-gray-100 mb-2">
+                Achievement Unlocked!
+              </h3>
+              <p id="achievementText" class="text-gray-300">-</p>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div
+            id="loadingSection"
+            class="therapy-card rounded-2xl p-12 text-center hidden"
+          >
+            <div class="flex flex-col items-center justify-center">
+              <div
+                class="w-20 h-20 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-6"
+              ></div>
+              <h3 class="text-xl font-semibold text-gray-100 mb-2">
+                AI Therapy Analysis in Progress
+              </h3>
+              <p class="text-gray-300">
+                Analyzing your performance and generating therapeutic music...
+              </p>
+              <div class="mt-4 flex space-x-2">
+                <div
+                  class="w-2 h-2 bg-purple-600 rounded-full animate-bounce"
+                ></div>
+                <div
+                  class="w-2 h-2 bg-purple-600 rounded-full animate-bounce"
+                  style="animation-delay: 0.1s"
+                ></div>
+                <div
+                  class="w-2 h-2 bg-purple-600 rounded-full animate-bounce"
+                  style="animation-delay: 0.2s"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // State management
+      let currentSession = null;
+      let isMusicPlaying = false;
+      let sessionHistory = [];
+      const n8nWebhookUrl =
+        "http://localhost:5678/webhook-test/therapy-session";
+
+      // DOM Elements
+      const elements = {
+        startSession: document.getElementById("startSession"),
+        resultsSection: document.getElementById("resultsSection"),
+        loadingSection: document.getElementById("loadingSection"),
+        musicVisualizer: document.getElementById("musicVisualizer"),
+        musicStatus: document.getElementById("musicStatus"),
+        musicIcon: document.getElementById("musicIcon"),
+        musicTheme: document.getElementById("musicTheme"),
+        musicDescription: document.getElementById("musicDescription"),
+        musicTempo: document.getElementById("musicTempo"),
+        musicEnergy: document.getElementById("musicEnergy"),
+        playPauseBtn: document.getElementById("playPauseBtn"),
+        achievementSection: document.getElementById("achievementSection"),
+      };
+
+      // Initialize sliders
+      function initializeSliders() {
+        const sliders = ["rangeMotion", "painLevel", "completionRate"];
+        sliders.forEach((sliderId) => {
+          const slider = document.getElementById(sliderId);
+          const valueSpan = document.getElementById(
+            sliderId
+              .replace("Motion", "Value")
+              .replace("Level", "Value")
+              .replace("Rate", "Value")
+          );
+
+          slider.addEventListener("input", (e) => {
+            valueSpan.textContent =
+              e.target.value + (sliderId === "painLevel" ? "" : "%");
+          });
+        });
+      }
+
+      // Set quick mood
+      function setMood(mood) {
+        const messages = {
+          frustrated: "I'm struggling with this exercise today",
+          motivated: "I'm feeling strong and making good progress!",
+          tired: "I'm feeling a bit tired but pushing through",
+        };
+        document.getElementById("patientMessage").value =
+          messages[mood] || "I'm feeling okay today";
+      }
+
+      // Start therapy session
+      async function startTherapySession() {
+        // Show loading state
+        elements.loadingSection.classList.remove("hidden");
+        elements.resultsSection.classList.add("hidden");
+        elements.startSession.disabled = true;
+        elements.startSession.innerHTML =
+          '<i class="fas fa-spinner fa-spin mr-2"></i> Analyzing...';
+
+        // Collect session data
+        const sessionData = {
+          exercise_type: document.getElementById("exerciseType").value,
+          performance_metrics: `range_of_motion=${
+            document.getElementById("rangeMotion").value
+          }%, pain_level=${
+            document.getElementById("painLevel").value
+          }, completion_rate=${
+            document.getElementById("completionRate").value
+          }%, stability_score=70%`,
+          patient_message: document.getElementById("patientMessage").value,
+          session_history:
+            sessionHistory.length > 0
+              ? "previous_sessions_available"
+              : "first_session",
+        };
+
+        try {
+          // Call N8N webhook
+          const response = await fetch(n8nWebhookUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(sessionData),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+          currentSession = result;
+
+          // Update UI with results
+          updateSessionResults(result);
+          addToSessionHistory(result);
+        } catch (error) {
+          console.error("Error starting therapy session:", error);
+          alert(
+            "Error connecting to therapy service. Please make sure N8N is running on port 5678."
+          );
+
+          // Fallback demo data
+          showDemoResults();
+        } finally {
+          // Hide loading state
+          elements.loadingSection.classList.add("hidden");
+          elements.startSession.disabled = false;
+          elements.startSession.innerHTML =
+            '<i class="fas fa-play mr-2"></i> Start Therapy Session';
+        }
+      }
+
+      // Update UI with session results
+      function updateSessionResults(result) {
+        // Show results section
+        elements.resultsSection.classList.remove("hidden");
+
+        // Update exercise plan
+        if (result.therapy_session) {
+          document.getElementById("nextExercise").textContent =
+            result.therapy_session.current_exercise;
+          document.getElementById("difficultyChange").textContent =
+            result.therapy_session.difficulty_level > 0
+              ? `+${result.therapy_session.difficulty_level}`
+              : result.therapy_session.difficulty_level;
+          document.getElementById(
+            "restPeriod"
+          ).textContent = `${result.therapy_session.rest_period} seconds`;
+          document.getElementById("therapistFeedback").textContent =
+            result.therapy_session.therapist_feedback;
+        }
+
+        // Update adaptive learning
+        if (result.adaptive_learning) {
+          document.getElementById("progressTrend").textContent =
+            result.adaptive_learning.progress_trend;
+          document.getElementById("moodAssessment").textContent =
+            result.adaptive_learning.mood_assessment;
+          document.getElementById("adaptationReason").textContent =
+            result.adaptive_learning.adaptation_reason;
+        }
+
+        // Update music player
+        if (result.theme_song) {
+          updateMusicPlayer(result.theme_song);
+        }
+
+        // Update achievement
+        if (
+          result.session_summary &&
+          result.session_summary.achievement_unlocked
+        ) {
+          elements.achievementSection.classList.remove("hidden");
+          document.getElementById("achievementText").textContent =
+            result.session_summary.achievement_unlocked;
+
+          // Set achievement icon based on type
+          const achievementIcon = document.getElementById("achievementIcon");
+          if (
+            result.session_summary.achievement_unlocked.includes("Progress")
+          ) {
+            achievementIcon.textContent = "🚀";
+          } else if (
+            result.session_summary.achievement_unlocked.includes("Consistency")
+          ) {
+            achievementIcon.textContent = "📅";
+          } else {
+            achievementIcon.textContent = "🏆";
+          }
+        }
+
+        // Add fade-in animation
+        elements.resultsSection.classList.add("fade-in");
+      }
+
+      // Update music player with theme song data
+      function updateMusicPlayer(musicData) {
+        elements.musicVisualizer.style.background = `linear-gradient(45deg, ${musicData.color}30 0%, ${musicData.color}15 50%, ${musicData.color}30 100%)`;
+        elements.musicIcon.textContent = musicData.icon;
+        elements.musicTheme.textContent = musicData.theme;
+        elements.musicDescription.textContent = `${musicData.genre} music with ${musicData.instruments}`;
+        elements.musicTempo.textContent = `${musicData.tempo} BPM`;
+        elements.musicEnergy.textContent = `${musicData.energy}/10`;
+        elements.musicStatus.textContent = "Music Ready";
+        elements.musicStatus.className =
+          "px-4 py-2 rounded-full bg-green-900/30 text-green-300 text-sm font-medium border border-green-700/50";
+      }
+
+      // Music controls
+      function toggleMusic() {
+        isMusicPlaying = !isMusicPlaying;
+        const icon = elements.playPauseBtn.querySelector("i");
+
+        if (isMusicPlaying) {
+          icon.className = "fas fa-pause text-white text-2xl";
+          elements.musicStatus.textContent = "Now Playing";
+          elements.musicVisualizer.classList.add("pulse-animation");
+        } else {
+          icon.className = "fas fa-play text-white text-2xl";
+          elements.musicStatus.textContent = "Paused";
+          elements.musicVisualizer.classList.remove("pulse-animation");
+        }
+      }
+
+      function adjustTempo(direction) {
+        if (!currentSession?.theme_song) return;
+
+        const currentTempo = parseInt(elements.musicTempo.textContent);
+        let newTempo =
+          direction === "faster" ? currentTempo + 10 : currentTempo - 10;
+        newTempo = Math.max(60, Math.min(140, newTempo));
+
+        elements.musicTempo.textContent = `${newTempo} BPM`;
+        currentSession.theme_song.tempo = newTempo;
+      }
+
+      // Session history management
+      function addToSessionHistory(session) {
+        const historyEntry = {
+          id: session.session_id || Date.now(),
+          timestamp: session.timestamp || new Date().toISOString(),
+          exercise: session.therapy_session?.current_exercise || "Unknown",
+          mood: session.adaptive_learning?.mood_assessment || "neutral",
+          difficulty: session.therapy_session?.difficulty_level || 0,
+        };
+
+        sessionHistory.unshift(historyEntry);
+        if (sessionHistory.length > 5) {
+          sessionHistory = sessionHistory.slice(0, 5);
+        }
+
+        updateHistoryDisplay();
+      }
+
+      function updateHistoryDisplay() {
+        const historyContainer = document.getElementById("sessionHistory");
+
+        if (sessionHistory.length === 0) {
+          historyContainer.innerHTML =
+            '<div class="text-center text-gray-400 py-4">No sessions yet. Start your first therapy session!</div>';
+          return;
+        }
+
+        historyContainer.innerHTML = sessionHistory
+          .map(
+            (session) => `
+                <div class="flex items-center justify-between p-3 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700/50">
+                            <i class="fas fa-dumbbell text-purple-400"></i>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-100">${
+                              session.exercise
+                            }</div>
+                            <div class="text-sm text-gray-400">${new Date(
+                              session.timestamp
+                            ).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-semibold ${
+                          session.difficulty > 0
+                            ? "text-green-400"
+                            : session.difficulty < 0
+                            ? "text-red-400"
+                            : "text-gray-300"
+                        }">
+                            ${session.difficulty > 0 ? "+" : ""}${
+              session.difficulty
+            }
+                        </div>
+                        <div class="text-sm text-gray-400 capitalize">${
+                          session.mood
+                        }</div>
+                    </div>
+                </div>
+            `
+          )
+          .join("");
+      }
+
+      // Demo fallback function
+      function showDemoResults() {
+        const demoResult = {
+          therapy_session: {
+            current_exercise: "resistance_band_pull",
+            difficulty_level: 1,
+            rest_period: 60,
+            therapist_feedback:
+              "Excellent progress! Your range of motion has improved significantly. Let's challenge you with a slightly more difficult exercise.",
+            confidence: 0.85,
+          },
+          adaptive_learning: {
+            progress_trend: "improving",
+            mood_assessment: "motivated",
+            performance_metrics: {
+              range_of_motion:
+                document.getElementById("rangeMotion").value + "%",
+              pain_level: document.getElementById("painLevel").value,
+              completion_rate:
+                document.getElementById("completionRate").value + "%",
+              stability_score: "70%",
+            },
+            adaptation_reason:
+              "Difficulty increased based on excellent performance metrics",
+          },
+          theme_song: {
+            tempo: 110,
+            genre: "upbeat",
+            energy: 8,
+            instruments: "guitar,drums,piano",
+            theme: "Energetic Motivational Beat",
+            color: "#50C878",
+            icon: "🎸",
+            audio_url: "https://therapy-music.example.com/upbeat_110bpm.mp3",
+            duration: 180,
+          },
+          session_summary: {
+            status: "completed",
+            duration_estimate: "3 minutes",
+            next_steps:
+              "Continue with resistance_band_pull while listening to Energetic Motivational Beat",
+            achievement_unlocked: "Progress Milestone - Level Up!",
+          },
+          session_id: "demo_" + Date.now(),
+          timestamp: new Date().toISOString(),
+        };
+
+        updateSessionResults(demoResult);
+        addToSessionHistory(demoResult);
+      }
+
+      // Initialize the application
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeSliders();
+        updateHistoryDisplay();
+
+        // Add some sample history for demo
+        if (sessionHistory.length === 0) {
+          addToSessionHistory({
+            session_id: "sample_1",
+            timestamp: new Date(Date.now() - 86400000).toISOString(),
+            therapy_session: {
+              current_exercise: "shoulder_rotation",
+              difficulty_level: 0,
+            },
+            adaptive_learning: { mood_assessment: "neutral" },
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
